@@ -9,8 +9,9 @@ export default async function handler(req, res) {
     const { blobs } = await list({ prefix: 'ssc-data.json' });
     
     if (blobs.length > 0) {
-      // Fetch the latest file content
-      const blobResponse = await fetch(blobs[0].url, { cache: 'no-store' });
+      const url = new URL(blobs[0].url);
+      url.searchParams.append('t', Date.now());
+      const blobResponse = await fetch(url.toString(), { cache: 'no-store' });
       const data = await blobResponse.json();
       return res.status(200).json(data);
     }

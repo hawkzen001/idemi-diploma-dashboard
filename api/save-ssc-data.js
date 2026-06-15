@@ -16,7 +16,9 @@ export default async function handler(req, res) {
     let currentData = {};
     
     if (blobs.length > 0) {
-      const blobResponse = await fetch(blobs[0].url, { cache: 'no-store' });
+      const url = new URL(blobs[0].url);
+      url.searchParams.append('t', Date.now());
+      const blobResponse = await fetch(url.toString(), { cache: 'no-store' });
       currentData = await blobResponse.json();
     }
 
