@@ -7,7 +7,7 @@ import DataTable from './components/DataTable';
 import { ChatPanel } from './components/ChatPanel';
 import { Users, UserPlus, BookOpen, Loader2 } from 'lucide-react';
 
-const Dashboard = () => {
+const Dashboard = ({ readOnly = false }) => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -103,7 +103,7 @@ const Dashboard = () => {
 
         {/* Data Table Row */}
         <div className="table-section">
-          <DataTable data={data} />
+          <DataTable data={data} readOnly={readOnly} />
         </div>
 
         <ChatPanel data={data} />

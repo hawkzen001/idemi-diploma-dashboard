@@ -25,7 +25,7 @@ const calculateAge = (dobString) => {
   return age;
 };
 
-const DataTable = ({ data }) => {
+const DataTable = ({ data, readOnly = false }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCourse, setFilterCourse] = useState('All');
   const [filterCategory, setFilterCategory] = useState('All');
@@ -147,14 +147,16 @@ const DataTable = ({ data }) => {
       <div className="table-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <h3>Recent Applications</h3>
-          <button 
-            onClick={processAll} 
-            disabled={isProcessingAll}
-            className="process-all-btn"
-          >
-            {isProcessingAll ? <Loader2 size={16} className="spin" /> : <Wand2 size={16} />}
-            {isProcessingAll ? "Processing..." : "Process All %"}
-          </button>
+          {!readOnly && (
+            <button 
+              onClick={processAll} 
+              disabled={isProcessingAll}
+              className="process-all-btn"
+            >
+              {isProcessingAll ? <Loader2 size={16} className="spin" /> : <Wand2 size={16} />}
+              {isProcessingAll ? "Processing..." : "Process All %"}
+            </button>
+          )}
         </div>
         <div className="table-filters">
           <div className="filter-group">
@@ -242,7 +244,7 @@ const DataTable = ({ data }) => {
                     )}
                   </td>
                   <td>
-                    {editingRow === row.id ? (
+                    {editingRow === row.id && !readOnly ? (
                       <input 
                         type="text" 
                         autoFocus
@@ -256,13 +258,17 @@ const DataTable = ({ data }) => {
                     ) : sscData[row.id] ? (
                       <span 
                         className="font-medium" 
-                        style={{ color: 'var(--accent)', cursor: 'pointer', borderBottom: '1px dashed var(--accent)' }}
-                        onClick={() => startEditing(row.id, sscData[row.id])}
-                        title="Click to edit manually"
+                        style={{ 
+                          color: 'var(--accent)', 
+                          cursor: readOnly ? 'default' : 'pointer', 
+                          borderBottom: readOnly ? 'none' : '1px dashed var(--accent)' 
+                        }}
+                        onClick={() => !readOnly && startEditing(row.id, sscData[row.id])}
+                        title={readOnly ? "SSC Percentage" : "Click to edit manually"}
                       >
                         {sscData[row.id]}
                       </span>
-                    ) : row.sscResultUrl ? (
+                    ) : row.sscResultUrl && !readOnly ? (
                       <button 
                         onClick={() => processSSC(row.id, row.sscResultUrl)}
                         disabled={loadingRows[row.id]}
