@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, ExternalLink, FileText, Image as ImageIcon, Wand2, Loader2 } from 'lucide-react';
+import { Search, ExternalLink, FileText, Image as ImageIcon, Wand2, Loader2, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { extractSSCPercentage } from '../services/aiService';
 
 const normalizeCategory = (casteStr) => {
@@ -34,6 +34,7 @@ const DataTable = ({ data, readOnly = false }) => {
   const [editValue, setEditValue] = useState('');
   const [loadingRows, setLoadingRows] = useState({});
   const [isProcessingAll, setIsProcessingAll] = useState(false);
+  const [sortConfig, setSortConfig] = useState({ key: 'date', direction: 'desc' });
 
   // Load globally saved data from Vercel Blob on mount
   useEffect(() => {
@@ -133,6 +134,38 @@ const DataTable = ({ data, readOnly = false }) => {
     return matchesSearch && matchesCourse && matchesCategory;
   });
 
+  const sortedData = [...filteredData].sort((a, b) => {
+    if (!sortConfig.key) return 0;
+    
+    let aValue, bValue;
+    
+    if (sortConfig.key === 'date') {
+      aValue = a.timestamp ? new Date(a.timestamp).getTime() : 0;
+      bValue = b.timestamp ? new Date(b.timestamp).getTime() : 0;
+    } else if (sortConfig.key === 'ssc') {
+      const aSsc = sscData[a.id];
+      const bSsc = sscData[b.id];
+      aValue = (aSsc && !isNaN(parseFloat(aSsc))) ? parseFloat(aSsc) : -1;
+      bValue = (bSsc && !isNaN(parseFloat(bSsc))) ? parseFloat(bSsc) : -1;
+    }
+    
+    if (aValue < bValue) {
+      return sortConfig.direction === 'asc' ? -1 : 1;
+    }
+    if (aValue > bValue) {
+      return sortConfig.direction === 'asc' ? 1 : -1;
+    }
+    return 0;
+  });
+
+  const requestSort = (key) => {
+    let direction = 'desc';
+    if (sortConfig.key === key && sortConfig.direction === 'desc') {
+      direction = 'asc';
+    }
+    setSortConfig({ key, direction });
+  };
+
   const getFileIcon = (url, title) => {
     if (!url) return null;
     return (
@@ -204,20 +237,44 @@ const DataTable = ({ data, readOnly = false }) => {
         <table className="data-table">
           <thead>
             <tr>
-              <th>Date</th>
+              <th 
+                onClick={() => requestSort('date')}
+                style={{ cursor: 'pointer', userSelect: 'none', transition: 'color 0.2s' }}
+                onMouseEnter={(e) => e.currentTarget.style.color = 'var(--accent)'}
+                onMouseLeave={(e) => e.currentTarget.style.color = ''}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  Date
+                  {sortConfig.key === 'date' ? (
+                    sortConfig.direction === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />
+                  ) : <ArrowUpDown size={14} style={{ opacity: 0.3 }} />}
+                </div>
+              </th>
               <th>Name</th>
               <th>DOB</th>
               <th>Age</th>
               <th>Eligibility</th>
-              <th>SSC %</th>
+              <th 
+                onClick={() => requestSort('ssc')}
+                style={{ cursor: 'pointer', userSelect: 'none', transition: 'color 0.2s' }}
+                onMouseEnter={(e) => e.currentTarget.style.color = 'var(--accent)'}
+                onMouseLeave={(e) => e.currentTarget.style.color = ''}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  SSC %
+                  {sortConfig.key === 'ssc' ? (
+                    sortConfig.direction === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />
+                  ) : <ArrowUpDown size={14} style={{ opacity: 0.3 }} />}
+                </div>
+              </th>
               <th>Category</th>
               <th>Course</th>
               <th>Docs</th>
             </tr>
           </thead>
           <tbody>
-            {filteredData.length > 0 ? (
-              filteredData.map((row) => (
+            {sortedData.length > 0 ? (
+              sortedData.map((row) => (
                 <tr key={row.id}>
                   <td>{row.timestamp ? row.timestamp.split(' ')[0] : '-'}</td>
                   <td className="font-medium">
