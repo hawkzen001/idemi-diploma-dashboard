@@ -6,12 +6,14 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { blobs } = await list({ prefix: 'ssc-data.json' });
+    // Fetch all blobs
+    const { blobs } = await list({ prefix: 'ssc-data' });
     
     if (blobs.length > 0) {
-      const url = new URL(blobs[0].url);
-      url.searchParams.append('t', Date.now());
-      const blobResponse = await fetch(url.toString(), { cache: 'no-store' });
+      // Sort by uploadedAt (newest first)
+      blobs.sort((a, b) => new Date(b.uploadedAt) - new Date(a.uploadedAt));
+      
+      const blobResponse = await fetch(blobs[0].url, { cache: 'no-store' });
       const data = await blobResponse.json();
       return res.status(200).json(data);
     }
