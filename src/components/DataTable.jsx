@@ -101,8 +101,9 @@ const DataTable = ({ data, readOnly = false }) => {
 
   const processAll = async () => {
     setIsProcessingAll(true);
-    for (const row of filteredData) {
-      if (row.sscResultUrl && !sscData[row.id]) {
+    // Use the raw 'data' array so new students are always scanned even if they are currently filtered out
+    for (const row of data) {
+      if (row.sscResultUrl && !sscData[row.id] && sscData[row.id] !== 'Error') {
         await processSSC(row.id, row.sscResultUrl);
         // Add 4.5s delay to avoid Gemini API free tier rate limit (15 RPM)
         await new Promise(resolve => setTimeout(resolve, 4500));
@@ -110,6 +111,22 @@ const DataTable = ({ data, readOnly = false }) => {
     }
     setIsProcessingAll(false);
   };
+
+  const [autoSyncDone, setAutoSyncDone] = useState(false);
+  
+  // Automatically start extracting newly registered students when the admin opens the dashboard
+  useEffect(() => {
+    if (!readOnly && data.length > 0 && Object.keys(sscData).length > 0 && !autoSyncDone) {
+      setAutoSyncDone(true);
+      
+      // Check if any students are missing their percentage
+      const needsProcessing = data.some(row => row.sscResultUrl && !sscData[row.id] && sscData[row.id] !== 'Error');
+      if (needsProcessing) {
+        console.log("Auto-syncing new student extractions...");
+        setTimeout(() => processAll(), 1000);
+      }
+    }
+  }, [data, sscData, readOnly, autoSyncDone]);
   
   const filteredData = data.filter(row => {
     // Text search
