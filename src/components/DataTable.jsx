@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Search, ExternalLink, FileText, Image as ImageIcon, Wand2, Loader2, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { Search, ExternalLink, FileText, Image as ImageIcon, Wand2, Loader2, ArrowUpDown, ArrowUp, ArrowDown, Download } from 'lucide-react';
 import { extractSSCPercentage } from '../services/aiService';
 import staticSscData from '../data/ssc-data.json';
+import Papa from 'papaparse';
 
 const normalizeCategory = (casteStr) => {
   if (!casteStr) return 'GENERAL';
@@ -194,6 +195,31 @@ const DataTable = ({ data, readOnly = false }) => {
     );
   };
 
+  const exportToCSV = () => {
+    const exportData = sortedData.map(row => ({
+      'Date': row.timestamp ? row.timestamp.split(' ')[0] : '-',
+      'Name': row.name || '-',
+      'Email': row.email || '-',
+      'DOB': row.dob || '-',
+      'Age': calculateAge(row.dob),
+      'Eligibility': calculateAge(row.dob) !== '-' ? (calculateAge(row.dob) > 21 ? 'Not Eligible' : 'Eligible') : '-',
+      'SSC %': sscData[row.id] || '-',
+      'Category': normalizeCategory(row.caste),
+      'Course': row.course ? row.course.replace('Diploma in ', '') : '-'
+    }));
+
+    const csv = Papa.unparse(exportData);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", "recent_applications.csv");
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="data-table-container glass-panel">
       <div className="table-header">
@@ -209,6 +235,14 @@ const DataTable = ({ data, readOnly = false }) => {
               {isProcessingAll ? "Processing..." : "Process All %"}
             </button>
           )}
+          <button 
+            onClick={exportToCSV}
+            className="process-all-btn"
+            style={{ background: 'var(--accent)' }}
+          >
+            <Download size={16} />
+            Export CSV
+          </button>
         </div>
         <div className="table-filters">
           <div className="filter-group">
