@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, ExternalLink, FileText, Image as ImageIcon, Wand2, Loader2, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { extractSSCPercentage } from '../services/aiService';
+import staticSscData from '../data/ssc-data.json';
 
 const normalizeCategory = (casteStr) => {
   if (!casteStr) return 'GENERAL';
@@ -29,7 +30,7 @@ const DataTable = ({ data, readOnly = false }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCourse, setFilterCourse] = useState('All');
   const [filterCategory, setFilterCategory] = useState('All');
-  const [sscData, setSscData] = useState({});
+  const [sscData, setSscData] = useState(staticSscData || {});
   const [editingRow, setEditingRow] = useState(null);
   const [editValue, setEditValue] = useState('');
   const [loadingRows, setLoadingRows] = useState({});
@@ -43,7 +44,8 @@ const DataTable = ({ data, readOnly = false }) => {
         const res = await fetch('/api/get-ssc-data');
         if (res.ok) {
           const data = await res.json();
-          setSscData(data);
+          // Merge static data with any newly saved blob data
+          setSscData(prev => ({ ...staticSscData, ...prev, ...data }));
         }
       } catch (err) {
         console.error("Failed to load global SSC data", err);
