@@ -228,7 +228,7 @@ const DataTable = ({ data, readOnly = false }) => {
 
     // Basic Eligibility Logic (can be updated based on specific rules)
     const age = calculateAge(row.dob);
-    if (age === '-' || age < 15) return 'Not Eligible';
+    if (age === '-' || age < 15 || age > 24) return 'Not Eligible';
     if (!row.casteDocUrl && normalizeCategory(row.caste) !== 'GENERAL') return 'Pending Docs';
     if (!row.sscResultUrl) return 'Pending Docs';
     return 'Eligible';
@@ -509,7 +509,6 @@ const DataTable = ({ data, readOnly = false }) => {
                         style={!readOnly ? { cursor: 'pointer' } : {}}
                       >
                         {getEligibility(row)}
-                        {eligibilityData[row.id] && <span style={{fontSize: '10px', marginLeft: '4px', opacity: 0.7}}>(M)</span>}
                       </span>
                     )}
                   </td>
