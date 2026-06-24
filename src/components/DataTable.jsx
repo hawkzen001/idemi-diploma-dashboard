@@ -234,6 +234,19 @@ const DataTable = ({ data, readOnly = false }) => {
     return 'Eligible';
   };
 
+  const getEligibilityStyle = (status) => {
+    switch (status) {
+      case 'Eligible':
+        return { background: 'rgba(16, 185, 129, 0.2)', color: '#10b981', border: '1px solid rgba(16, 185, 129, 0.5)' };
+      case 'Not Eligible':
+        return { background: 'rgba(239, 68, 68, 0.2)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.5)' };
+      case 'Pending Docs':
+        return { background: 'rgba(245, 158, 11, 0.2)', color: '#f59e0b', border: '1px solid rgba(245, 158, 11, 0.5)' };
+      default:
+        return {};
+    }
+  };
+
   const processAll = async () => {
     setIsProcessingAll(true);
     // Use the raw 'data' array so new students are always scanned even if they are currently filtered out
@@ -498,7 +511,7 @@ const DataTable = ({ data, readOnly = false }) => {
                       </select>
                     ) : (
                       <span
-                        className={`badge ${getEligibility(row) === 'Eligible' ? 'eligible' : getEligibility(row) === 'Not Eligible' ? 'not-eligible' : 'pending'} ${!readOnly ? "editable-value" : ""}`}
+                        className={`badge ${!readOnly ? "editable-value" : ""}`}
                         onClick={() => {
                           if (!readOnly) {
                             setEditingEligibility(row.id);
@@ -506,7 +519,7 @@ const DataTable = ({ data, readOnly = false }) => {
                           }
                         }}
                         title={!readOnly ? "Click to override" : ""}
-                        style={!readOnly ? { cursor: 'pointer' } : {}}
+                        style={{ ...getEligibilityStyle(getEligibility(row)), ...(!readOnly ? { cursor: 'pointer' } : {}) }}
                       >
                         {getEligibility(row)}
                       </span>
