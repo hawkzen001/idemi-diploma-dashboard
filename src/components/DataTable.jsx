@@ -34,25 +34,38 @@ const DataTable = ({ data, readOnly = false }) => {
   const [sscData, setSscData] = useState(staticSscData || {});
   const [editingRow, setEditingRow] = useState(null);
   const [editValue, setEditValue] = useState('');
+  
+  const [categoryData, setCategoryData] = useState({});
+  const [editingCategory, setEditingCategory] = useState(null);
+  const [editCategoryValue, setEditCategoryValue] = useState('');
+  const [savingCategory, setSavingCategory] = useState(false);
+
   const [loadingRows, setLoadingRows] = useState({});
   const [isProcessingAll, setIsProcessingAll] = useState(false);
   const [sortConfig, setSortConfig] = useState({ key: 'date', direction: 'desc' });
 
   // Load globally saved data from Vercel Blob on mount
   useEffect(() => {
-    const loadSavedData = async () => {
+    const loadGlobalData = async () => {
       try {
-        const res = await fetch('/api/get-ssc-data');
-        if (res.ok) {
-          const data = await res.json();
+        const [sscRes, catRes] = await Promise.all([
+          fetch('/api/get-ssc-data'),
+          fetch('/api/get-category-data')
+        ]);
+        if (sscRes.ok) {
+          const data = await sscRes.json();
           // Merge static data with any newly saved blob data
           setSscData(prev => ({ ...staticSscData, ...prev, ...data }));
         }
-      } catch (err) {
-        console.error("Failed to load global SSC data", err);
+        if (catRes.ok) {
+          const data = await catRes.json();
+          setCategoryData(data);
+        }
+      } catch (error) {
+        console.error('Failed to load global data', error);
       }
     };
-    loadSavedData();
+    loadGlobalData();
   }, []);
 
   const saveToBlob = async (id, percentage) => {
@@ -102,6 +115,34 @@ const DataTable = ({ data, readOnly = false }) => {
     if (e.key === 'Escape') setEditingRow(null);
   };
 
+  const saveCategory = async (id) => {
+    if (editCategoryValue === categoryData[id] || 
+        (!categoryData[id] && editCategoryValue === normalizeCategory(data.find(d => d.id === id)?.caste))) {
+      setEditingCategory(null);
+      return;
+    }
+
+    setSavingCategory(true);
+    const originalCategoryData = { ...categoryData };
+    setCategoryData(prev => ({ ...prev, [id]: editCategoryValue }));
+
+    try {
+      const response = await fetch('/api/save-category-data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, category: editCategoryValue }),
+      });
+      if (!response.ok) throw new Error('Failed to save');
+    } catch (error) {
+      console.error('Failed to save category:', error);
+      setCategoryData(originalCategoryData);
+      alert('Failed to save category permanently. It has been reverted.');
+    } finally {
+      setSavingCategory(false);
+      setEditingCategory(null);
+    }
+  };
+
   const processAll = async () => {
     setIsProcessingAll(true);
     // Use the raw 'data' array so new students are always scanned even if they are currently filtered out
@@ -138,19 +179,13 @@ const DataTable = ({ data, readOnly = false }) => {
     );
 
     // Course filter
-    let matchesCourse = true;
-    if (filterCourse !== 'All') {
-      const dbCourse = row.course ? row.course.toLowerCase() : '';
-      const target = filterCourse.split(' ')[0].toLowerCase(); // e.g., "3D", "Robotics", "Tool"
-      matchesCourse = dbCourse.includes(target);
-    }
-
+    const matchesCourse = filterCourse === 'All' || 
+      (row.course && row.course.toLowerCase().includes(filterCourse.toLowerCase()));
+      
     // Category filter
-    let matchesCategory = true;
-    if (filterCategory !== 'All') {
-      matchesCategory = normalizeCategory(row.caste) === filterCategory;
-    }
-
+    const matchesCategory = filterCategory === 'All' || 
+      (categoryData[row.id] || normalizeCategory(row.caste)) === filterCategory;
+      
     return matchesSearch && matchesCourse && matchesCategory;
   });
 
@@ -392,9 +427,37 @@ const DataTable = ({ data, readOnly = false }) => {
                     )}
                   </td>
                   <td>
-                    <span className="badge" style={{ background: 'rgba(255,255,255,0.1)', color: '#fff', border: 'none' }}>
-                      {normalizeCategory(row.caste)}
-                    </span>
+                    {editingCategory === row.id && !readOnly ? (
+                      <select
+                        autoFocus
+                        value={editCategoryValue}
+                        onChange={(e) => setEditCategoryValue(e.target.value)}
+                        onBlur={() => saveCategory(row.id)}
+                        disabled={savingCategory}
+                        className="edit-input"
+                        style={{ padding: '4px', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--surface-light)', color: 'var(--text-primary)' }}
+                      >
+                        <option value="GENERAL">GENERAL</option>
+                        <option value="OBC">OBC</option>
+                        <option value="SC">SC</option>
+                        <option value="ST">ST</option>
+                        <option value="EWS">EWS</option>
+                      </select>
+                    ) : (
+                      <span
+                        className={`badge ${categoryData[row.id] || normalizeCategory(row.caste)} ${!readOnly ? "editable-value" : ""}`}
+                        onClick={() => {
+                          if (!readOnly) {
+                            setEditingCategory(row.id);
+                            setEditCategoryValue(categoryData[row.id] || normalizeCategory(row.caste));
+                          }
+                        }}
+                        title={!readOnly ? "Click to edit" : ""}
+                        style={!readOnly ? { cursor: 'pointer' } : {}}
+                      >
+                        {categoryData[row.id] || normalizeCategory(row.caste)}
+                      </span>
+                    )}
                   </td>
                   <td>
                     <span className="badge course-badge">
