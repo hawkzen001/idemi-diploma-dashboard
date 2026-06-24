@@ -174,7 +174,7 @@ const DataTable = ({ data, readOnly = false }) => {
     } catch (error) {
       console.error('Failed to save considered for:', error);
       setConsideredData(originalConsideredData);
-      alert('Failed to save "Considered For" permanently. It has been reverted.');
+      alert('Failed to save "Applied For" permanently. It has been reverted.');
     } finally {
       setSavingConsidered(false);
       setEditingConsidered(null);
@@ -228,7 +228,7 @@ const DataTable = ({ data, readOnly = false }) => {
     const matchesCategory = filterCategory === 'All' || 
       (categoryData[row.id] || normalizeCategory(row.caste)) === filterCategory;
       
-    // Considered For filter
+    // Applied For filter
     const currentConsidered = consideredData[row.id] || '1st Year';
     const matchesConsidered = filterConsidered === 'All' || currentConsidered === filterConsidered;
       
@@ -410,7 +410,7 @@ const DataTable = ({ data, readOnly = false }) => {
                 </div>
               </th>
               <th>Category</th>
-              <th>Considered For</th>
+              <th>Applied For</th>
               <th>Course</th>
               <th>Docs</th>
             </tr>
