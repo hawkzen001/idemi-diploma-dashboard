@@ -314,6 +314,11 @@ const DataTable = ({ data, readOnly = false }) => {
       const bSsc = sscData[b.id];
       aValue = (aSsc && !isNaN(parseFloat(aSsc))) ? parseFloat(aSsc) : -1;
       bValue = (bSsc && !isNaN(parseFloat(bSsc))) ? parseFloat(bSsc) : -1;
+    } else if (sortConfig.key === 'age') {
+      const aAge = calculateAge(a.dob);
+      const bAge = calculateAge(b.dob);
+      aValue = aAge !== '-' ? parseInt(aAge) : -1;
+      bValue = bAge !== '-' ? parseInt(bAge) : -1;
     }
     
     if (aValue < bValue) {
@@ -460,7 +465,22 @@ const DataTable = ({ data, readOnly = false }) => {
               </th>
               <th>Name</th>
               <th>DOB</th>
-              <th>Age</th>
+              <th 
+                onClick={() => requestSort('age')}
+                style={{ cursor: 'pointer', userSelect: 'none', transition: 'color 0.2s' }}
+                onMouseEnter={(e) => e.currentTarget.style.color = 'var(--accent)'}
+                onMouseLeave={(e) => e.currentTarget.style.color = ''}
+                title="Click to sort by Age"
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  Age
+                  {sortConfig.key === 'age' ? (
+                    sortConfig.direction === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />
+                  ) : (
+                    <ArrowUpDown size={14} style={{ opacity: 0.3 }} />
+                  )}
+                </div>
+              </th>
               <th>Eligibility</th>
               <th 
                 onClick={() => requestSort('ssc')}
