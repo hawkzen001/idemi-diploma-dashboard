@@ -72,7 +72,7 @@ export const AdmissionStatusWidget = ({ data }) => {
     <div className="admission-status-container glass-panel">
       <div className="admission-header">
         <div>
-          <h3>AICTE Diploma Admission Status</h3>
+          <h3>AICTE Diploma Admission Status - 1st Year</h3>
           <p className="subtitle">As on {currentDate}</p>
         </div>
         
