@@ -46,6 +46,11 @@ const DataTable = ({ data, readOnly = false }) => {
   const [editConsideredValue, setEditConsideredValue] = useState('');
   const [savingConsidered, setSavingConsidered] = useState(false);
 
+  const [eligibilityData, setEligibilityData] = useState({});
+  const [editingEligibility, setEditingEligibility] = useState(null);
+  const [editEligibilityValue, setEditEligibilityValue] = useState('');
+  const [savingEligibility, setSavingEligibility] = useState(false);
+
   const [loadingRows, setLoadingRows] = useState({});
   const [isProcessingAll, setIsProcessingAll] = useState(false);
   const [sortConfig, setSortConfig] = useState({ key: 'date', direction: 'desc' });
@@ -54,10 +59,11 @@ const DataTable = ({ data, readOnly = false }) => {
   useEffect(() => {
     const loadGlobalData = async () => {
       try {
-        const [sscRes, catRes, conRes] = await Promise.all([
+        const [sscRes, catRes, conRes, eligRes] = await Promise.all([
           fetch('/api/get-ssc-data'),
           fetch('/api/get-category-data'),
-          fetch('/api/get-considered-data')
+          fetch('/api/get-considered-data'),
+          fetch('/api/get-eligibility-data')
         ]);
         if (sscRes.ok) {
           const data = await sscRes.json();
@@ -71,6 +77,10 @@ const DataTable = ({ data, readOnly = false }) => {
         if (conRes.ok) {
           const data = await conRes.json();
           setConsideredData(data);
+        }
+        if (eligRes.ok) {
+          const data = await eligRes.json();
+          setEligibilityData(data);
         }
       } catch (error) {
         console.error('Failed to load global data', error);
@@ -181,6 +191,49 @@ const DataTable = ({ data, readOnly = false }) => {
     }
   };
 
+  const saveEligibility = async (id) => {
+    if (editEligibilityValue === eligibilityData[id]) {
+      setEditingEligibility(null);
+      return;
+    }
+
+    setSavingEligibility(true);
+    const originalEligibilityData = { ...eligibilityData };
+    
+    setEligibilityData(prev => {
+      const next = { ...prev };
+      next[id] = editEligibilityValue;
+      return next;
+    });
+
+    try {
+      const response = await fetch('/api/save-eligibility-data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, eligibility: editEligibilityValue }),
+      });
+      if (!response.ok) throw new Error('Failed to save');
+    } catch (error) {
+      console.error('Failed to save eligibility:', error);
+      setEligibilityData(originalEligibilityData);
+      alert('Failed to save eligibility permanently. It has been reverted.');
+    } finally {
+      setSavingEligibility(false);
+      setEditingEligibility(null);
+    }
+  };
+
+  const getEligibility = (row) => {
+    if (eligibilityData[row.id]) return eligibilityData[row.id];
+
+    // Basic Eligibility Logic (can be updated based on specific rules)
+    const age = calculateAge(row.dob);
+    if (age === '-' || age < 15) return 'Not Eligible';
+    if (!row.casteDocUrl && normalizeCategory(row.caste) !== 'GENERAL') return 'Pending Docs';
+    if (!row.sscResultUrl) return 'Pending Docs';
+    return 'Eligible';
+  };
+
   const processAll = async () => {
     setIsProcessingAll(true);
     // Use the raw 'data' array so new students are always scanned even if they are currently filtered out
@@ -283,7 +336,7 @@ const DataTable = ({ data, readOnly = false }) => {
       'Email': row.email || '-',
       'DOB': row.dob || '-',
       'Age': calculateAge(row.dob),
-      'Eligibility': calculateAge(row.dob) !== '-' ? (calculateAge(row.dob) > 21 ? 'Not Eligible' : 'Eligible') : '-',
+      'Eligibility': getEligibility(row),
       'SSC %': sscData[row.id] || '-',
       'Category': normalizeCategory(row.caste),
       'Course': row.course ? row.course.replace('Diploma in ', '') : '-'
@@ -429,18 +482,35 @@ const DataTable = ({ data, readOnly = false }) => {
                   <td>{row.dob ? row.dob : '-'}</td>
                   <td>{calculateAge(row.dob)}</td>
                   <td>
-                    {calculateAge(row.dob) !== '-' ? (
-                      calculateAge(row.dob) > 21 ? (
-                        <span className="badge" style={{ background: 'rgba(239, 68, 68, 0.2)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.5)' }}>
-                          Not Eligible
-                        </span>
-                      ) : (
-                        <span className="badge" style={{ background: 'rgba(16, 185, 129, 0.2)', color: '#10b981', border: '1px solid rgba(16, 185, 129, 0.5)' }}>
-                          Eligible
-                        </span>
-                      )
+                    {editingEligibility === row.id && !readOnly ? (
+                      <select
+                        autoFocus
+                        value={editEligibilityValue}
+                        onChange={(e) => setEditEligibilityValue(e.target.value)}
+                        onBlur={() => saveEligibility(row.id)}
+                        disabled={savingEligibility}
+                        className="edit-input"
+                        style={{ padding: '4px', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--surface-light)', color: 'var(--text-primary)' }}
+                      >
+                        <option value="Eligible">Eligible</option>
+                        <option value="Not Eligible">Not Eligible</option>
+                        <option value="Pending Docs">Pending Docs</option>
+                      </select>
                     ) : (
-                      '-'
+                      <span
+                        className={`badge ${getEligibility(row) === 'Eligible' ? 'eligible' : getEligibility(row) === 'Not Eligible' ? 'not-eligible' : 'pending'} ${!readOnly ? "editable-value" : ""}`}
+                        onClick={() => {
+                          if (!readOnly) {
+                            setEditingEligibility(row.id);
+                            setEditEligibilityValue(eligibilityData[row.id] || getEligibility(row));
+                          }
+                        }}
+                        title={!readOnly ? "Click to override" : ""}
+                        style={!readOnly ? { cursor: 'pointer' } : {}}
+                      >
+                        {getEligibility(row)}
+                        {eligibilityData[row.id] && <span style={{fontSize: '10px', marginLeft: '4px', opacity: 0.7}}>(M)</span>}
+                      </span>
                     )}
                   </td>
                   <td>
