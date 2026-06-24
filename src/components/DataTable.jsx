@@ -60,6 +60,11 @@ const DataTable = ({ data, readOnly = false }) => {
   const [editEligibilityValue, setEditEligibilityValue] = useState('');
   const [savingEligibility, setSavingEligibility] = useState(false);
 
+  const [verificationData, setVerificationData] = useState({});
+  const [editingVerification, setEditingVerification] = useState(null);
+  const [editVerificationValue, setEditVerificationValue] = useState('');
+  const [savingVerification, setSavingVerification] = useState(false);
+
   const [loadingRows, setLoadingRows] = useState({});
   const [isProcessingAll, setIsProcessingAll] = useState(false);
   const [sortConfig, setSortConfig] = useState({ key: 'date', direction: 'desc' });
@@ -68,11 +73,12 @@ const DataTable = ({ data, readOnly = false }) => {
   useEffect(() => {
     const loadGlobalData = async () => {
       try {
-        const [sscRes, catRes, conRes, eligRes] = await Promise.all([
+        const [sscRes, catRes, conRes, eligRes, verifRes] = await Promise.all([
           fetch('/api/get-ssc-data'),
           fetch('/api/get-category-data'),
           fetch('/api/get-considered-data'),
-          fetch('/api/get-eligibility-data')
+          fetch('/api/get-eligibility-data'),
+          fetch('/api/get-verification-data')
         ]);
         if (sscRes.ok) {
           const data = await sscRes.json();
@@ -90,6 +96,10 @@ const DataTable = ({ data, readOnly = false }) => {
         if (eligRes.ok) {
           const data = await eligRes.json();
           setEligibilityData(data);
+        }
+        if (verifRes.ok) {
+          const data = await verifRes.json();
+          setVerificationData(data);
         }
       } catch (error) {
         console.error('Failed to load global data', error);
@@ -209,26 +219,50 @@ const DataTable = ({ data, readOnly = false }) => {
     setSavingEligibility(true);
     const originalEligibilityData = { ...eligibilityData };
     
-    setEligibilityData(prev => {
-      const next = { ...prev };
-      next[id] = editEligibilityValue;
-      return next;
-    });
-
     try {
       const response = await fetch('/api/save-eligibility-data', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, eligibility: editEligibilityValue }),
+        body: JSON.stringify({ id, eligibility: editEligibilityValue })
       });
-      if (!response.ok) throw new Error('Failed to save');
+      if (response.ok) {
+        setEligibilityData(prev => ({ ...prev, [id]: editEligibilityValue }));
+      } else {
+        alert('Failed to save Eligibility permanently. It has been reverted.');
+      }
     } catch (error) {
-      console.error('Failed to save eligibility:', error);
-      setEligibilityData(originalEligibilityData);
-      alert('Failed to save eligibility permanently. It has been reverted.');
+      console.error(error);
+      alert('Failed to save Eligibility permanently. It has been reverted.');
     } finally {
       setSavingEligibility(false);
       setEditingEligibility(null);
+    }
+  };
+
+  const saveVerification = async (id) => {
+    if (editVerificationValue === (verificationData[id] || 'Pending')) {
+      setEditingVerification(null);
+      return;
+    }
+
+    setSavingVerification(true);
+    try {
+      const response = await fetch('/api/save-verification-data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, verification: editVerificationValue })
+      });
+      if (response.ok) {
+        setVerificationData(prev => ({ ...prev, [id]: editVerificationValue }));
+      } else {
+        alert('Failed to save Verification permanently. It has been reverted.');
+      }
+    } catch (error) {
+      console.error(error);
+      alert('Failed to save Verification permanently. It has been reverted.');
+    } finally {
+      setSavingVerification(false);
+      setEditingVerification(null);
     }
   };
 
@@ -253,6 +287,22 @@ const DataTable = ({ data, readOnly = false }) => {
         return { background: 'rgba(245, 158, 11, 0.2)', color: '#f59e0b', border: '1px solid rgba(245, 158, 11, 0.5)' };
       default:
         return {};
+    }
+  };
+
+  const getVerification = (row) => {
+    return verificationData[row.id] || 'Pending';
+  };
+
+  const getVerificationStyle = (status) => {
+    switch (status) {
+      case 'Verified':
+        return { background: 'rgba(16, 185, 129, 0.2)', color: '#10b981', border: '1px solid rgba(16, 185, 129, 0.5)' };
+      case 'Rejected':
+        return { background: 'rgba(239, 68, 68, 0.2)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.5)' };
+      case 'Pending':
+      default:
+        return { background: 'rgba(245, 158, 11, 0.2)', color: '#f59e0b', border: '1px solid rgba(245, 158, 11, 0.5)' };
     }
   };
 
@@ -363,6 +413,7 @@ const DataTable = ({ data, readOnly = false }) => {
       'DOB': row.dob || '-',
       'Age': calculateAge(row.dob),
       'Eligibility': getEligibility(row),
+      'Verification': getVerification(row),
       'SSC %': sscData[row.id] || '-',
       'Category': normalizeCategory(row.caste),
       'Course': getCourseInfo(row.course).name
@@ -490,6 +541,7 @@ const DataTable = ({ data, readOnly = false }) => {
                 </div>
               </th>
               <th>Eligibility</th>
+              <th>Verification</th>
               <th 
                 onClick={() => requestSort('ssc')}
                 style={{ cursor: 'pointer', userSelect: 'none', transition: 'color 0.2s' }}
@@ -550,6 +602,36 @@ const DataTable = ({ data, readOnly = false }) => {
                         style={{ ...getEligibilityStyle(getEligibility(row)), ...(!readOnly ? { cursor: 'pointer' } : {}) }}
                       >
                         {getEligibility(row)}
+                      </span>
+                    )}
+                  </td>
+                  <td>
+                    {editingVerification === row.id && !readOnly ? (
+                      <select
+                        autoFocus
+                        value={editVerificationValue}
+                        onChange={(e) => setEditVerificationValue(e.target.value)}
+                        onBlur={() => saveVerification(row.id)}
+                        disabled={savingVerification}
+                        className="editable-input"
+                      >
+                        <option value="Pending">Pending</option>
+                        <option value="Verified">Verified</option>
+                        <option value="Rejected">Rejected</option>
+                      </select>
+                    ) : (
+                      <span
+                        className={`badge ${!readOnly ? "editable-value" : ""}`}
+                        onClick={() => {
+                          if (!readOnly) {
+                            setEditingVerification(row.id);
+                            setEditVerificationValue(getVerification(row));
+                          }
+                        }}
+                        title={!readOnly ? "Click to edit" : ""}
+                        style={{ ...getVerificationStyle(getVerification(row)), ...(!readOnly ? { cursor: 'pointer' } : {}) }}
+                      >
+                        {getVerification(row)}
                       </span>
                     )}
                   </td>
