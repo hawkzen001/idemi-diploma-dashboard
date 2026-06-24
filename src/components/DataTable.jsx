@@ -40,6 +40,12 @@ const DataTable = ({ data, readOnly = false }) => {
   const [editCategoryValue, setEditCategoryValue] = useState('');
   const [savingCategory, setSavingCategory] = useState(false);
 
+  const [filterConsidered, setFilterConsidered] = useState('1st Year');
+  const [consideredData, setConsideredData] = useState({});
+  const [editingConsidered, setEditingConsidered] = useState(null);
+  const [editConsideredValue, setEditConsideredValue] = useState('');
+  const [savingConsidered, setSavingConsidered] = useState(false);
+
   const [loadingRows, setLoadingRows] = useState({});
   const [isProcessingAll, setIsProcessingAll] = useState(false);
   const [sortConfig, setSortConfig] = useState({ key: 'date', direction: 'desc' });
@@ -48,9 +54,10 @@ const DataTable = ({ data, readOnly = false }) => {
   useEffect(() => {
     const loadGlobalData = async () => {
       try {
-        const [sscRes, catRes] = await Promise.all([
+        const [sscRes, catRes, conRes] = await Promise.all([
           fetch('/api/get-ssc-data'),
-          fetch('/api/get-category-data')
+          fetch('/api/get-category-data'),
+          fetch('/api/get-considered-data')
         ]);
         if (sscRes.ok) {
           const data = await sscRes.json();
@@ -60,6 +67,10 @@ const DataTable = ({ data, readOnly = false }) => {
         if (catRes.ok) {
           const data = await catRes.json();
           setCategoryData(data);
+        }
+        if (conRes.ok) {
+          const data = await conRes.json();
+          setConsideredData(data);
         }
       } catch (error) {
         console.error('Failed to load global data', error);
@@ -143,6 +154,33 @@ const DataTable = ({ data, readOnly = false }) => {
     }
   };
 
+  const saveConsidered = async (id) => {
+    if (editConsideredValue === (consideredData[id] || '1st Year')) {
+      setEditingConsidered(null);
+      return;
+    }
+
+    setSavingConsidered(true);
+    const originalConsideredData = { ...consideredData };
+    setConsideredData(prev => ({ ...prev, [id]: editConsideredValue }));
+
+    try {
+      const response = await fetch('/api/save-considered-data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, consideredFor: editConsideredValue }),
+      });
+      if (!response.ok) throw new Error('Failed to save');
+    } catch (error) {
+      console.error('Failed to save considered for:', error);
+      setConsideredData(originalConsideredData);
+      alert('Failed to save "Considered For" permanently. It has been reverted.');
+    } finally {
+      setSavingConsidered(false);
+      setEditingConsidered(null);
+    }
+  };
+
   const processAll = async () => {
     setIsProcessingAll(true);
     // Use the raw 'data' array so new students are always scanned even if they are currently filtered out
@@ -190,7 +228,11 @@ const DataTable = ({ data, readOnly = false }) => {
     const matchesCategory = filterCategory === 'All' || 
       (categoryData[row.id] || normalizeCategory(row.caste)) === filterCategory;
       
-    return matchesSearch && matchesCourse && matchesCategory;
+    // Considered For filter
+    const currentConsidered = consideredData[row.id] || '1st Year';
+    const matchesConsidered = filterConsidered === 'All' || currentConsidered === filterConsidered;
+      
+    return matchesSearch && matchesCourse && matchesCategory && matchesConsidered;
   });
 
   const sortedData = [...filteredData].sort((a, b) => {
@@ -292,12 +334,10 @@ const DataTable = ({ data, readOnly = false }) => {
             >
               <option value="All">All Programs</option>
               <option value="3D Animation & Graphics">3D Animation & Graphics</option>
-              <option value="Robotics & Mechatronics">Robotics & Mechatronics</option>
               <option value="Tool & Die Making">Tool & Die Making</option>
+              <option value="Mechatronics & Robotics">Mechatronics & Robotics</option>
             </select>
-          </div>
-          
-          <div className="filter-group">
+
             <select 
               value={filterCategory} 
               onChange={(e) => setFilterCategory(e.target.value)}
@@ -309,6 +349,16 @@ const DataTable = ({ data, readOnly = false }) => {
               <option value="OBC">OBC</option>
               <option value="GENERAL">GENERAL</option>
               <option value="EWS">EWS</option>
+            </select>
+
+            <select 
+              value={filterConsidered} 
+              onChange={(e) => setFilterConsidered(e.target.value)}
+              className="filter-select"
+            >
+              <option value="All">All Years</option>
+              <option value="1st Year">1st Year</option>
+              <option value="2nd Year">2nd Year</option>
             </select>
           </div>
 
@@ -360,6 +410,7 @@ const DataTable = ({ data, readOnly = false }) => {
                 </div>
               </th>
               <th>Category</th>
+              <th>Considered For</th>
               <th>Course</th>
               <th>Docs</th>
             </tr>
@@ -460,6 +511,36 @@ const DataTable = ({ data, readOnly = false }) => {
                         style={!readOnly ? { cursor: 'pointer' } : {}}
                       >
                         {categoryData[row.id] || normalizeCategory(row.caste)}
+                      </span>
+                    )}
+                  </td>
+                  <td>
+                    {editingConsidered === row.id && !readOnly ? (
+                      <select
+                        autoFocus
+                        value={editConsideredValue}
+                        onChange={(e) => setEditConsideredValue(e.target.value)}
+                        onBlur={() => saveConsidered(row.id)}
+                        disabled={savingConsidered}
+                        className="edit-input"
+                        style={{ padding: '4px', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--surface-light)', color: 'var(--text-primary)' }}
+                      >
+                        <option value="1st Year">1st Year</option>
+                        <option value="2nd Year">2nd Year</option>
+                      </select>
+                    ) : (
+                      <span
+                        className={`badge ${!readOnly ? "editable-value" : ""}`}
+                        onClick={() => {
+                          if (!readOnly) {
+                            setEditingConsidered(row.id);
+                            setEditConsideredValue(consideredData[row.id] || '1st Year');
+                          }
+                        }}
+                        title={!readOnly ? "Click to edit" : ""}
+                        style={!readOnly ? { cursor: 'pointer', background: 'var(--surface-lighter)' } : { background: 'var(--surface-lighter)' }}
+                      >
+                        {consideredData[row.id] || '1st Year'}
                       </span>
                     )}
                   </td>
