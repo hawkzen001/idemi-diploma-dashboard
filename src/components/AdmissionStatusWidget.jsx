@@ -26,8 +26,24 @@ const normalizeCaste = (casteStr) => {
   return 'GENERAL';
 };
 
-export const AdmissionStatusWidget = ({ data }) => {
+export const AdmissionStatusWidget = ({ data, isSecondYear = false }) => {
   const [activeCourse, setActiveCourse] = useState(Object.keys(COURSE_DATA)[0]);
+  const [consideredData, setConsideredData] = useState({});
+
+  React.useEffect(() => {
+    const fetchConsidered = async () => {
+      try {
+        const res = await fetch('/api/get-considered-data');
+        if (res.ok) {
+          const d = await res.json();
+          setConsideredData(d);
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    };
+    fetchConsidered();
+  }, []);
 
   // Use selected course configuration
   const courseConfig = COURSE_DATA[activeCourse];
@@ -37,6 +53,12 @@ export const AdmissionStatusWidget = ({ data }) => {
   // We do a loose match in case form data has slight variations
   const relevantData = data.filter(d => {
     if (!d.course) return false;
+    
+    // Filter by year
+    const year = consideredData[d.id] || '1st Year';
+    if (isSecondYear && year !== '2nd Year') return false;
+    if (!isSecondYear && year !== '1st Year') return false;
+
     const dbCourse = d.course.toLowerCase();
     const target = courseConfig.shortName.split(' ')[0].toLowerCase();
     return dbCourse.includes(target);
@@ -72,7 +94,7 @@ export const AdmissionStatusWidget = ({ data }) => {
     <div className="admission-status-container glass-panel">
       <div className="admission-header">
         <div>
-          <h3>AICTE Diploma Admission Status - 1st Year</h3>
+          <h3>AICTE Diploma Admission Status - {isSecondYear ? '2nd Year' : '1st Year'}</h3>
           <p className="subtitle">As on {currentDate}</p>
         </div>
         
@@ -107,18 +129,20 @@ export const AdmissionStatusWidget = ({ data }) => {
               </tr>
             </thead>
             <tbody>
-              <tr>
-                <td>Intake Capacity</td>
-                <td>{intakeCapacity.SC}</td>
-                <td>{intakeCapacity.ST}</td>
-                <td>{intakeCapacity.OBC}</td>
-                <td>{intakeCapacity.GENERAL}</td>
-                <td className="highlight-col">
-                  {intakeCapacity.SC + intakeCapacity.ST + intakeCapacity.OBC + intakeCapacity.GENERAL}
-                </td>
-                <td>{intakeCapacity.EWS}</td>
-                <td className="highlight-col">{totalCapacity}</td>
-              </tr>
+              {!isSecondYear && (
+                <tr>
+                  <td>Intake Capacity</td>
+                  <td>{intakeCapacity.SC}</td>
+                  <td>{intakeCapacity.ST}</td>
+                  <td>{intakeCapacity.OBC}</td>
+                  <td>{intakeCapacity.GENERAL}</td>
+                  <td className="highlight-col">
+                    {intakeCapacity.SC + intakeCapacity.ST + intakeCapacity.OBC + intakeCapacity.GENERAL}
+                  </td>
+                  <td>{intakeCapacity.EWS}</td>
+                  <td className="highlight-col">{totalCapacity}</td>
+                </tr>
+              )}
               <tr>
                 <td>Registrations</td>
                 <td>{registrations.SC}</td>
@@ -138,9 +162,9 @@ export const AdmissionStatusWidget = ({ data }) => {
         {/* Visual Chart */}
         <div className="status-chart-wrapper">
           <div className="chart-title-bar">
-            <h4>{courseConfig.shortName} - Capacity vs. Registrations</h4>
+            <h4>{courseConfig.shortName} - {isSecondYear ? 'Registrations' : 'Capacity vs. Registrations'}</h4>
             <div className="total-badge small">
-              <span>{totalRegistered} / {totalCapacity}</span> Total
+              <span>{totalRegistered}{!isSecondYear && ` / ${totalCapacity}`}</span> Total
             </div>
           </div>
           <ResponsiveContainer width="100%" height={300}>
@@ -154,7 +178,9 @@ export const AdmissionStatusWidget = ({ data }) => {
                 labelStyle={{ color: '#fff', fontWeight: 'bold', marginBottom: '4px' }}
               />
               <Legend />
-              <Bar dataKey="Capacity" fill="var(--text-secondary)" radius={[4, 4, 0, 0]} opacity={0.5} />
+              {!isSecondYear && (
+                <Bar dataKey="Capacity" fill="var(--text-secondary)" radius={[4, 4, 0, 0]} opacity={0.5} />
+              )}
               <Bar dataKey="Registered" fill="var(--accent)" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>

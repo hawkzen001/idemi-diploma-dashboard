@@ -94,6 +94,7 @@ const Dashboard = ({ readOnly = false }) => {
 
         {/* Admission Status Infographic */}
         <AdmissionStatusWidget data={data} />
+        <AdmissionStatusWidget data={data} isSecondYear={true} />
 
         {/* Charts Row */}
         <div className="charts-grid">
