@@ -6,8 +6,8 @@ const COURSE_DATA = {
     shortName: "3D Animation & Graphics",
     capacity: { SC: 9, ST: 5, OBC: 16, GENERAL: 30, EWS: 6 }
   },
-  "Diploma in Robotics & Mechatronics": {
-    shortName: "Robotics & Mechatronics",
+  "Diploma in Robotics and Mechatronics": {
+    shortName: "Robotics and Mechatronics",
     capacity: { SC: 5, ST: 2, OBC: 8, GENERAL: 15, EWS: 3 }
   },
   "Diploma in Tool & Die Making": {

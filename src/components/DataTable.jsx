@@ -27,6 +27,15 @@ const calculateAge = (dobString) => {
   return age;
 };
 
+const getCourseInfo = (courseString) => {
+  if (!courseString) return { code: '-', name: '-' };
+  const lower = courseString.toLowerCase();
+  if (lower.includes('3d animation')) return { code: '3DANI', name: '3D Animation and Graphics' };
+  if (lower.includes('mechatronics') || lower.includes('robotics')) return { code: 'RM', name: 'Robotics and Mechatronics' };
+  if (lower.includes('tool') || lower.includes('die')) return { code: 'TD', name: 'Tool & Die Making' };
+  return { code: courseString, name: courseString };
+};
+
 const DataTable = ({ data, readOnly = false }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCourse, setFilterCourse] = useState('All');
@@ -285,9 +294,8 @@ const DataTable = ({ data, readOnly = false }) => {
     // Course filter
     let matchesCourse = true;
     if (filterCourse !== 'All') {
-      const dbCourse = row.course ? row.course.toLowerCase() : '';
-      const target = filterCourse.split(' ')[0].toLowerCase(); // e.g., "3D", "Robotics", "Tool"
-      matchesCourse = dbCourse.includes(target);
+      const courseInfo = getCourseInfo(row.course);
+      matchesCourse = courseInfo.name === filterCourse;
     }
       
     // Category filter
@@ -357,7 +365,7 @@ const DataTable = ({ data, readOnly = false }) => {
       'Eligibility': getEligibility(row),
       'SSC %': sscData[row.id] || '-',
       'Category': normalizeCategory(row.caste),
-      'Course': row.course ? row.course.replace('Diploma in ', '') : '-'
+      'Course': getCourseInfo(row.course).name
     }));
 
     const csv = Papa.unparse(exportData);
@@ -404,9 +412,9 @@ const DataTable = ({ data, readOnly = false }) => {
               className="filter-select"
             >
               <option value="All">All Programs</option>
-              <option value="3D Animation & Graphics">3D Animation & Graphics</option>
+              <option value="3D Animation and Graphics">3D Animation and Graphics</option>
+              <option value="Robotics and Mechatronics">Robotics and Mechatronics</option>
               <option value="Tool & Die Making">Tool & Die Making</option>
-              <option value="Mechatronics & Robotics">Mechatronics & Robotics</option>
             </select>
 
             <select 
@@ -647,8 +655,8 @@ const DataTable = ({ data, readOnly = false }) => {
                     )}
                   </td>
                   <td>
-                    <span className="badge course-badge">
-                      {row.course ? row.course.replace('Diploma in ', '') : '-'}
+                    <span className="badge course-badge" title={getCourseInfo(row.course).name}>
+                      {getCourseInfo(row.course).code}
                     </span>
                   </td>
                   <td className="actions-cell">
