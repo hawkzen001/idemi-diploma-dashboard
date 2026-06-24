@@ -179,8 +179,12 @@ const DataTable = ({ data, readOnly = false }) => {
     );
 
     // Course filter
-    const matchesCourse = filterCourse === 'All' || 
-      (row.course && row.course.toLowerCase().includes(filterCourse.toLowerCase()));
+    let matchesCourse = true;
+    if (filterCourse !== 'All') {
+      const dbCourse = row.course ? row.course.toLowerCase() : '';
+      const target = filterCourse.split(' ')[0].toLowerCase(); // e.g., "3D", "Robotics", "Tool"
+      matchesCourse = dbCourse.includes(target);
+    }
       
     // Category filter
     const matchesCategory = filterCategory === 'All' || 
