@@ -255,7 +255,8 @@ const DataTable = ({ data, readOnly = false }) => {
       if (response.ok) {
         setVerificationData(prev => ({ ...prev, [id]: editVerificationValue }));
       } else {
-        alert('Failed to save Verification permanently. It has been reverted.');
+        const errorText = await response.text();
+        alert(`Failed: ${response.status} - ${errorText}`);
       }
     } catch (error) {
       console.error(error);
