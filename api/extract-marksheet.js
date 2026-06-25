@@ -21,47 +21,36 @@ export default async function handler(req, res) {
   const genAI = new GoogleGenerativeAI(apiKey);
 
   try {
-    // 1. Fetch the image from Google Drive securely on the backend
-    const url = `https://drive.google.com/uc?export=download&id=${id}`;
+    // Fetch the image from Google Drive using the Google Apps Script Proxy
+    const proxyUrl = `https://script.google.com/macros/s/AKfycbxnfkaYqQREEvhxtIEIxCVZ26todhTqMgQGwT_tYHPtNm8PXwaSkBfblAt9akZtcsPG/exec?id=${id}`;
     
-    const fetchDriveImage = (urlStr) => {
-      return new Promise((resolve, reject) => {
-        const getReq = (currentUrl) => {
-          https.get(currentUrl, (proxyRes) => {
-            if (proxyRes.statusCode >= 300 && proxyRes.statusCode < 400 && proxyRes.headers.location) {
-              getReq(proxyRes.headers.location);
-            } else {
-              let data = [];
-              proxyRes.on('data', chunk => data.push(chunk));
-              proxyRes.on('end', () => {
-                const buffer = Buffer.concat(data);
-                resolve({ buffer, mimeType: proxyRes.headers['content-type'] });
-              });
-              proxyRes.on('error', reject);
-            }
-          }).on('error', reject);
-        };
-        getReq(urlStr);
-      });
-    };
-
-    const { buffer, mimeType } = await fetchDriveImage(url);
-
-    if (!buffer || buffer.length === 0) {
-      throw new Error("Google Drive blocked the download. The file is private or restricted. Please go to your Google Drive and share the folder containing the uploads as 'Anyone with the link can view'.");
+    const proxyResponse = await fetch(proxyUrl);
+    if (!proxyResponse.ok) {
+      throw new Error(`Proxy returned status ${proxyResponse.status}`);
     }
+    
+    const data = await proxyResponse.json();
+    
+    if (data.error) {
+      throw new Error(`Google Apps Script Error: ${data.error}`);
+    }
+
+    if (!data.base64) {
+      throw new Error("Proxy failed to return image data. Please ensure the proxy is configured correctly.");
+    }
+
+    const base64Data = data.base64;
+    const mimeType = data.mimeType;
 
     // Ensure valid mimeType for Gemini
     let finalMimeType = mimeType;
     if (!finalMimeType || finalMimeType.includes('octet-stream') || finalMimeType === 'text/html') {
-      const b64Prefix = buffer.toString('base64', 0, 20);
+      const b64Prefix = base64Data.substring(0, 20);
       if (b64Prefix.startsWith('/9j/')) finalMimeType = 'image/jpeg';
       else if (b64Prefix.startsWith('iVBORw')) finalMimeType = 'image/png';
       else if (b64Prefix.startsWith('JVBERi0')) finalMimeType = 'application/pdf';
       else finalMimeType = 'image/jpeg'; // Fallback
     }
-
-    const base64Data = buffer.toString('base64');
 
     // 2. Call Gemini API using Fallback Logic
     const modelsToTry = [
