@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, ExternalLink, FileText, Image as ImageIcon, Wand2, Loader2, ArrowUpDown, ArrowUp, ArrowDown, Download } from 'lucide-react';
-import { extractSSCPercentage } from '../services/aiService';
+import { Search, ExternalLink, FileText, Image as ImageIcon, Wand2, Loader2, ArrowUpDown, ArrowUp, ArrowDown, Download, Upload } from 'lucide-react';
+import { extractSSCPercentage, extractLocalMarksheet } from '../services/aiService';
 import staticSscData from '../data/ssc-data.json';
 import Papa from 'papaparse';
 
@@ -144,6 +144,23 @@ const DataTable = ({ data, readOnly = false }) => {
       // Save globally
       await saveToBlob(id, percentage);
     } catch (error) {
+      setSscData(prev => ({ ...prev, [id]: 'Error' }));
+    } finally {
+      setLoadingRows(prev => ({ ...prev, [id]: false }));
+    }
+  };
+
+  const processLocalSSC = async (id, file) => {
+    if (!file || loadingRows[id]) return;
+    
+    setLoadingRows(prev => ({ ...prev, [id]: true }));
+    try {
+      const percentage = await extractLocalMarksheet(file);
+      setSscData(prev => ({ ...prev, [id]: percentage }));
+      // Save globally
+      await saveToBlob(id, percentage);
+    } catch (error) {
+      alert("Extraction failed: " + error.message);
       setSscData(prev => ({ ...prev, [id]: 'Error' }));
     } finally {
       setLoadingRows(prev => ({ ...prev, [id]: false }));
@@ -701,14 +718,34 @@ const DataTable = ({ data, readOnly = false }) => {
                         {sscData[row.id]}
                       </span>
                     ) : row.sscResultUrl && !readOnly ? (
-                      <button 
-                        onClick={() => processSSC(row.id, row.sscResultUrl)}
-                        disabled={loadingRows[row.id]}
-                        className="extract-btn"
-                      >
-                        {loadingRows[row.id] ? <Loader2 size={14} className="spin" /> : <Wand2 size={14} />}
-                        Extract
-                      </button>
+                      <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                        <button 
+                          onClick={() => processSSC(row.id, row.sscResultUrl)}
+                          disabled={loadingRows[row.id]}
+                          className="extract-btn"
+                          title="Extract directly from Google Drive"
+                        >
+                          {loadingRows[row.id] ? <Loader2 size={14} className="spin" /> : <Wand2 size={14} />}
+                          Extract
+                        </button>
+                        <label 
+                          className="extract-btn" 
+                          style={{ cursor: 'pointer', background: 'var(--surface)', border: '1px solid var(--border)' }} 
+                          title="Google Drive blocked it? Upload the marksheet manually to extract!"
+                        >
+                          {loadingRows[row.id] ? <Loader2 size={14} className="spin" /> : <Upload size={14} />}
+                          <input 
+                            type="file" 
+                            accept="image/*,.pdf" 
+                            style={{ display: 'none' }} 
+                            onChange={(e) => {
+                              if (e.target.files && e.target.files[0]) {
+                                processLocalSSC(row.id, e.target.files[0]);
+                              }
+                            }} 
+                          />
+                        </label>
+                      </div>
                     ) : (
                       <span className="text-secondary">-</span>
                     )}

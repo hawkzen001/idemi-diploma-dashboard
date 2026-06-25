@@ -37,3 +37,33 @@ export const extractSSCPercentage = async (driveUrl) => {
     throw error;
   }
 };
+
+export const extractLocalMarksheet = async (file) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = async () => {
+      try {
+        const base64Data = reader.result.split(',')[1];
+        const mimeType = file.type;
+
+        const response = await fetch('/api/extract-local', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ base64Data, mimeType })
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || `Backend returned status ${response.status}`);
+        }
+
+        const data = await response.json();
+        resolve(data.percentage);
+      } catch (err) {
+        reject(err);
+      }
+    };
+    reader.onerror = error => reject(error);
+  });
+};
