@@ -24,3 +24,5 @@ dist-ssr
 *.sw?
 .vercel
 .env*
+idemi-aicte-dashboard-firebase-adminsdk-fbsvc-1030af3275.json
+setup-vercel-env.cjs
