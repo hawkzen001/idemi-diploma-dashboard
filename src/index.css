@@ -337,6 +337,19 @@ body {
   z-index: 10;
 }
 
+.data-table .sticky-col {
+  position: sticky;
+  left: 0;
+  z-index: 5;
+  background-color: var(--bg-dark);
+  box-shadow: 4px 0 8px rgba(0, 0, 0, 0.2);
+}
+
+.data-table th.sticky-col {
+  z-index: 15; /* Higher than regular sticky headers (10) */
+  background-color: rgba(30, 41, 59, 0.95);
+}
+
 .data-table td {
   padding: 1rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.04);

@@ -510,6 +510,7 @@ const DataTable = ({ data, readOnly = false }) => {
         <table className="data-table">
           <thead>
             <tr>
+              <th className="sticky-col">Name</th>
               <th 
                 onClick={() => requestSort('date')}
                 style={{ cursor: 'pointer', userSelect: 'none', transition: 'color 0.2s' }}
@@ -523,7 +524,6 @@ const DataTable = ({ data, readOnly = false }) => {
                   ) : <ArrowUpDown size={14} style={{ opacity: 0.3 }} />}
                 </div>
               </th>
-              <th>Name</th>
               <th>DOB</th>
               <th 
                 onClick={() => requestSort('age')}
@@ -566,13 +566,13 @@ const DataTable = ({ data, readOnly = false }) => {
             {sortedData.length > 0 ? (
               sortedData.map((row) => (
                 <tr key={row.id}>
-                  <td>{row.timestamp ? row.timestamp.split(' ')[0] : '-'}</td>
-                  <td className="font-medium">
+                  <td className="font-medium sticky-col">
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
                       <span>{row.name || '-'}</span>
                       <span className="text-secondary" style={{ fontSize: '0.8rem' }}>{row.email}</span>
                     </div>
                   </td>
+                  <td>{row.timestamp ? row.timestamp.split(' ')[0] : '-'}</td>
                   <td>{row.dob ? row.dob : '-'}</td>
                   <td>{calculateAge(row.dob)}</td>
                   <td>
