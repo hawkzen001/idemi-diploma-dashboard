@@ -5,12 +5,18 @@ import { TimelineChart, CourseDistributionChart } from './components/ChartWidget
 import { AdmissionStatusWidget } from './components/AdmissionStatusWidget';
 import DataTable from './components/DataTable';
 import { ChatPanel } from './components/ChatPanel';
-import { Users, UserPlus, BookOpen, Loader2 } from 'lucide-react';
+import { Users, UserPlus, BookOpen, Loader2, Sun, Moon } from 'lucide-react';
 
 const Dashboard = ({ readOnly = false }) => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark');
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('theme', theme);
+  }, [theme]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -63,7 +69,28 @@ const Dashboard = ({ readOnly = false }) => {
           <h1 className="dashboard-title">IDEMI AICTE Diploma</h1>
           <p className="dashboard-subtitle">AY 2026-27 Application Tracker</p>
         </div>
-        <div className="header-actions">
+        <div className="header-actions" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <button 
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            className="glass-panel"
+            style={{
+              background: 'var(--surface-bg)',
+              border: '1px solid var(--border-color)',
+              color: 'var(--text-primary)',
+              cursor: 'pointer',
+              width: '40px',
+              height: '40px',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.2s ease',
+              padding: 0
+            }}
+            title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`}
+          >
+            {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+          </button>
           <div className="status-indicator">
             <span className="dot pulse"></span>
             Live Data Sync

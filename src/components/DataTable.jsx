@@ -587,8 +587,8 @@ const DataTable = ({ data, readOnly = false }) => {
                         onClick={scrollLeft}
                         title="Scroll Left"
                         style={{ 
-                          background: 'rgba(255,255,255,0.05)', 
-                          border: '1px solid rgba(255,255,255,0.1)', 
+                          background: 'var(--surface-hover)', 
+                          border: '1px solid var(--border-color)', 
                           color: 'var(--text-primary)', 
                           cursor: 'pointer', 
                           minWidth: '32px',
@@ -600,8 +600,8 @@ const DataTable = ({ data, readOnly = false }) => {
                           transition: 'all 0.2s',
                           padding: 0
                         }}
-                        onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--accent)'; e.currentTarget.style.borderColor = 'var(--accent)'; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--accent-bg)'; e.currentTarget.style.borderColor = 'var(--accent)'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--surface-hover)'; e.currentTarget.style.borderColor = 'var(--border-color)'; }}
                       >
                         &lt;
                       </button>
@@ -801,8 +801,8 @@ const DataTable = ({ data, readOnly = false }) => {
                       onClick={scrollRight}
                       title="Scroll Right"
                       style={{ 
-                        background: 'rgba(255,255,255,0.05)', 
-                        border: '1px solid rgba(255,255,255,0.1)', 
+                        background: 'var(--surface-hover)', 
+                        border: '1px solid var(--border-color)', 
                         color: 'var(--text-primary)', 
                         cursor: 'pointer', 
                         width: '32px',
@@ -814,8 +814,8 @@ const DataTable = ({ data, readOnly = false }) => {
                         transition: 'all 0.2s',
                         marginLeft: 'auto'
                       }}
-                      onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--accent)'; e.currentTarget.style.borderColor = 'var(--accent)'; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; }}
+                      onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--accent-bg)'; e.currentTarget.style.borderColor = 'var(--accent)'; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--surface-hover)'; e.currentTarget.style.borderColor = 'var(--border-color)'; }}
                     >
                       &gt;
                     </button>
