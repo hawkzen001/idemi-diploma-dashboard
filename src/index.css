@@ -27,6 +27,8 @@
   --shadow-color: rgba(0, 0, 0, 0.05);
   --shadow-strong: rgba(0, 0, 0, 0.1);
   --table-header: rgba(241, 245, 249, 0.95);
+  --title-gradient: linear-gradient(135deg, #4f46e5, #6366f1);
+  --chart-grid: rgba(0,0,0,0.1);
 }
 
 [data-theme="dark"] {
