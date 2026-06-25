@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Search, ExternalLink, FileText, Image as ImageIcon, Wand2, Loader2, ArrowUpDown, ArrowUp, ArrowDown, Download } from 'lucide-react';
 import { extractSSCPercentage } from '../services/aiService';
 import staticSscData from '../data/ssc-data.json';
@@ -37,6 +37,14 @@ const getCourseInfo = (courseString) => {
 };
 
 const DataTable = ({ data, readOnly = false }) => {
+  const tableContainerRef = useRef(null);
+  
+  const scrollRight = () => {
+    if (tableContainerRef.current) {
+      tableContainerRef.current.scrollBy({ left: 300, behavior: 'smooth' });
+    }
+  };
+
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCourse, setFilterCourse] = useState('All');
   const [filterCategory, setFilterCategory] = useState('All');
@@ -506,7 +514,7 @@ const DataTable = ({ data, readOnly = false }) => {
         </div>
       </div>
       
-      <div className="table-responsive">
+      <div className="table-responsive" ref={tableContainerRef}>
         <table className="data-table">
           <thead>
             <tr>
@@ -560,6 +568,7 @@ const DataTable = ({ data, readOnly = false }) => {
               <th>Applied For</th>
               <th>Course</th>
               <th>Docs</th>
+              <th className="sticky-col-right" style={{ width: '50px' }}></th>
             </tr>
           </thead>
           <tbody>
@@ -756,6 +765,30 @@ const DataTable = ({ data, readOnly = false }) => {
                         <ImageIcon size={16} />
                       </a>
                     )}
+                  </td>
+                  <td className="sticky-col-right" style={{ padding: '0 8px' }}>
+                    <button 
+                      onClick={scrollRight}
+                      title="Scroll Right"
+                      style={{ 
+                        background: 'rgba(255,255,255,0.05)', 
+                        border: '1px solid rgba(255,255,255,0.1)', 
+                        color: 'var(--text-primary)', 
+                        cursor: 'pointer', 
+                        width: '32px',
+                        height: '32px',
+                        borderRadius: '50%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transition: 'all 0.2s',
+                        marginLeft: 'auto'
+                      }}
+                      onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--accent)'; e.currentTarget.style.borderColor = 'var(--accent)'; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; }}
+                    >
+                      &gt;
+                    </button>
                   </td>
                 </tr>
               ))
