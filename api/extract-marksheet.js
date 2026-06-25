@@ -61,12 +61,9 @@ export default async function handler(req, res) {
 
     // 2. Call Gemini API using Fallback Logic
     const modelsToTry = [
-      "gemini-2.5-flash-lite",
-      "gemini-flash-lite-latest",
+      "gemini-2.5-flash",
       "gemini-2.0-flash",
-      "gemini-2.0-flash-lite",
-      "gemini-3.5-flash",
-      "gemini-2.5-pro",
+      "gemini-1.5-pro",
       "gemini-pro-latest"
     ];
 
@@ -90,12 +87,9 @@ If you absolutely cannot find or calculate it, return 'N/A'. Do not include any 
         ]);
         break; // Success
       } catch (e) {
+        console.error(`Model ${modelName} failed:`, e.message);
         lastError = e;
-        if (e.status === 429 || e.status === 404 || (e.message && e.message.includes('Quota'))) {
-          continue; // Try next model
-        } else {
-          throw e; 
-        }
+        continue; // Try next model on any error
       }
     }
 
