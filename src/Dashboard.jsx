@@ -65,9 +65,12 @@ const Dashboard = ({ readOnly = false }) => {
   return (
     <div className="dashboard-container">
       <header className="dashboard-header">
-        <div>
-          <h1 className="dashboard-title">IDEMI AICTE Diploma</h1>
-          <p className="dashboard-subtitle">AY 2026-27 Application Tracker</p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+          <img src="/logo.png" alt="IDEMI Logo" style={{ height: '60px', width: 'auto', objectFit: 'contain' }} />
+          <div>
+            <h1 className="dashboard-title">IDEMI AICTE Diploma</h1>
+            <p className="dashboard-subtitle">AY 2026-27 Application Tracker</p>
+          </div>
         </div>
         <div className="header-actions" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <button 
