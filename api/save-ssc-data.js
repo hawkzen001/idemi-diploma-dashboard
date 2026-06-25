@@ -6,7 +6,8 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { id, result } = req.body;
+    const { id, percentage } = req.body;
+    const result = percentage; // For backwards compatibility
     if (!id || result === undefined) {
       return res.status(400).json({ error: 'ID and result are required' });
     }

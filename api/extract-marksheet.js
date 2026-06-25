@@ -47,9 +47,13 @@ export default async function handler(req, res) {
 
     const { buffer, mimeType } = await fetchDriveImage(url);
 
+    if (!buffer || buffer.length === 0) {
+      throw new Error("Google Drive blocked the download. The file is private or restricted. Please go to your Google Drive and share the folder containing the uploads as 'Anyone with the link can view'.");
+    }
+
     // Ensure valid mimeType for Gemini
     let finalMimeType = mimeType;
-    if (!finalMimeType || finalMimeType.includes('octet-stream')) {
+    if (!finalMimeType || finalMimeType.includes('octet-stream') || finalMimeType === 'text/html') {
       const b64Prefix = buffer.toString('base64', 0, 20);
       if (b64Prefix.startsWith('/9j/')) finalMimeType = 'image/jpeg';
       else if (b64Prefix.startsWith('iVBORw')) finalMimeType = 'image/png';
