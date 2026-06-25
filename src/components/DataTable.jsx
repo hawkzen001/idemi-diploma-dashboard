@@ -45,6 +45,12 @@ const DataTable = ({ data, readOnly = false }) => {
     }
   };
 
+  const scrollLeft = () => {
+    if (tableContainerRef.current) {
+      tableContainerRef.current.scrollBy({ left: -300, behavior: 'smooth' });
+    }
+  };
+
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCourse, setFilterCourse] = useState('All');
   const [filterCategory, setFilterCategory] = useState('All');
@@ -576,9 +582,33 @@ const DataTable = ({ data, readOnly = false }) => {
               sortedData.map((row) => (
                 <tr key={row.id}>
                   <td className="font-medium sticky-col">
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                      <span>{row.name || '-'}</span>
-                      <span className="text-secondary" style={{ fontSize: '0.8rem' }}>{row.email}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <button 
+                        onClick={scrollLeft}
+                        title="Scroll Left"
+                        style={{ 
+                          background: 'rgba(255,255,255,0.05)', 
+                          border: '1px solid rgba(255,255,255,0.1)', 
+                          color: 'var(--text-primary)', 
+                          cursor: 'pointer', 
+                          minWidth: '32px',
+                          height: '32px',
+                          borderRadius: '50%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          transition: 'all 0.2s',
+                          padding: 0
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--accent)'; e.currentTarget.style.borderColor = 'var(--accent)'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; }}
+                      >
+                        &lt;
+                      </button>
+                      <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <span>{row.name || '-'}</span>
+                        <span className="text-secondary" style={{ fontSize: '0.8rem' }}>{row.email}</span>
+                      </div>
                     </div>
                   </td>
                   <td>{row.timestamp ? row.timestamp.split(' ')[0] : '-'}</td>
