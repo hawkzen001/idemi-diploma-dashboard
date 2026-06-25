@@ -450,7 +450,7 @@ const DataTable = ({ data, readOnly = false }) => {
     <div className="data-table-container glass-panel">
       <div className="table-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <h3>Recent Applications</h3>
+          <h3 style={{ opacity: 0.1 }}>Recent Applications</h3>
           {!readOnly && (
             <button 
               onClick={processAll} 
