@@ -6,7 +6,8 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { id, considered } = req.body;
+    const { id, consideredFor } = req.body;
+    const considered = consideredFor; // For backwards compatibility or local variable usage
     if (!id || !considered) {
       return res.status(400).json({ error: 'ID and considered state are required' });
     }
