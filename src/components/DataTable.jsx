@@ -3,6 +3,7 @@ import { Search, ExternalLink, FileText, Image as ImageIcon, Wand2, Loader2, Arr
 import { extractSSCPercentage, extractLocalMarksheet } from '../services/aiService';
 import staticSscData from '../data/ssc-data.json';
 import Papa from 'papaparse';
+import { getOverrideData, saveOverrideData } from '../lib/firebase';
 
 const normalizeCategory = (casteStr) => {
   if (!casteStr) return 'GENERAL';
@@ -83,38 +84,23 @@ const DataTable = ({ data, readOnly = false }) => {
   const [isProcessingAll, setIsProcessingAll] = useState(false);
   const [sortConfig, setSortConfig] = useState({ key: 'date', direction: 'desc' });
 
-  // Load globally saved data from Vercel Blob on mount
+  // Load globally saved data from Firestore on mount
   useEffect(() => {
     const loadGlobalData = async () => {
       try {
-        const [sscRes, catRes, conRes, eligRes, verifRes] = await Promise.all([
-          fetch('/api/get-ssc-data'),
-          fetch('/api/get-category-data'),
-          fetch('/api/get-considered-data'),
-          fetch('/api/get-eligibility-data'),
-          fetch('/api/get-verification-data')
+        const [sscDataFirestore, catData, conData, eligData, verifData] = await Promise.all([
+          getOverrideData('ssc'),
+          getOverrideData('category'),
+          getOverrideData('considered'),
+          getOverrideData('eligibility'),
+          getOverrideData('verification')
         ]);
-        if (sscRes.ok) {
-          const data = await sscRes.json();
-          // Merge static data with any newly saved blob data
-          setSscData(prev => ({ ...staticSscData, ...prev, ...data }));
-        }
-        if (catRes.ok) {
-          const data = await catRes.json();
-          setCategoryData(data);
-        }
-        if (conRes.ok) {
-          const data = await conRes.json();
-          setConsideredData(data);
-        }
-        if (eligRes.ok) {
-          const data = await eligRes.json();
-          setEligibilityData(data);
-        }
-        if (verifRes.ok) {
-          const data = await verifRes.json();
-          setVerificationData(data);
-        }
+        
+        setSscData(prev => ({ ...staticSscData, ...prev, ...sscDataFirestore }));
+        setCategoryData(catData);
+        setConsideredData(conData);
+        setEligibilityData(eligData);
+        setVerificationData(verifData);
       } catch (error) {
         console.error('Failed to load global data', error);
       }
@@ -124,13 +110,9 @@ const DataTable = ({ data, readOnly = false }) => {
 
   const saveToBlob = async (id, percentage) => {
     try {
-      await fetch('/api/save-ssc-data', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, percentage })
-      });
+      await saveOverrideData('ssc', id, percentage);
     } catch (err) {
-      console.error("Failed to save to Vercel Blob", err);
+      console.error("Failed to save to Firestore", err);
     }
   };
 
@@ -198,12 +180,7 @@ const DataTable = ({ data, readOnly = false }) => {
     setCategoryData(prev => ({ ...prev, [id]: editCategoryValue }));
 
     try {
-      const response = await fetch('/api/save-category-data', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, category: editCategoryValue }),
-      });
-      if (!response.ok) throw new Error('Failed to save');
+      await saveOverrideData('category', id, editCategoryValue);
     } catch (error) {
       console.error('Failed to save category:', error);
       setCategoryData(originalCategoryData);
@@ -225,12 +202,7 @@ const DataTable = ({ data, readOnly = false }) => {
     setConsideredData(prev => ({ ...prev, [id]: editConsideredValue }));
 
     try {
-      const response = await fetch('/api/save-considered-data', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, consideredFor: editConsideredValue }),
-      });
-      if (!response.ok) throw new Error('Failed to save');
+      await saveOverrideData('considered', id, editConsideredValue);
     } catch (error) {
       console.error('Failed to save considered for:', error);
       setConsideredData(originalConsideredData);
@@ -251,16 +223,8 @@ const DataTable = ({ data, readOnly = false }) => {
     const originalEligibilityData = { ...eligibilityData };
     
     try {
-      const response = await fetch('/api/save-eligibility-data', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, eligibility: editEligibilityValue })
-      });
-      if (response.ok) {
-        setEligibilityData(prev => ({ ...prev, [id]: editEligibilityValue }));
-      } else {
-        alert('Failed to save Eligibility permanently. It has been reverted.');
-      }
+      await saveOverrideData('eligibility', id, editEligibilityValue);
+      setEligibilityData(prev => ({ ...prev, [id]: editEligibilityValue }));
     } catch (error) {
       console.error(error);
       alert('Failed to save Eligibility permanently. It has been reverted.');
@@ -278,17 +242,8 @@ const DataTable = ({ data, readOnly = false }) => {
 
     setSavingVerification(true);
     try {
-      const response = await fetch('/api/save-verification-data', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, verification: editVerificationValue })
-      });
-      if (response.ok) {
-        setVerificationData(prev => ({ ...prev, [id]: editVerificationValue }));
-      } else {
-        const errorText = await response.text();
-        alert(`Failed: ${response.status} - ${errorText}`);
-      }
+      await saveOverrideData('verification', id, editVerificationValue);
+      setVerificationData(prev => ({ ...prev, [id]: editVerificationValue }));
     } catch (error) {
       console.error(error);
       alert('Failed to save Verification permanently. It has been reverted.');
