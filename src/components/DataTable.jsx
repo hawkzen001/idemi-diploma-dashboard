@@ -659,50 +659,57 @@ const DataTable = ({ data, readOnly = false }) => {
                         className="search-input"
                         style={{ width: '70px', padding: '4px' }}
                       />
-                    ) : sscData[row.id] ? (
-                      <span 
-                        className="font-medium" 
-                        style={{ 
-                          color: 'var(--accent)', 
-                          cursor: readOnly ? 'default' : 'pointer', 
-                          borderBottom: readOnly ? 'none' : '1px dashed var(--accent)' 
-                        }}
-                        onClick={() => !readOnly && startEditing(row.id, sscData[row.id])}
-                        title={readOnly ? "SSC Percentage" : "Click to edit manually"}
-                      >
-                        {sscData[row.id]}
+                    ) : readOnly ? (
+                      <span className="font-medium" style={{ color: sscData[row.id] === 'Error' ? 'var(--error)' : 'var(--accent)' }}>
+                        {sscData[row.id] || '-'}
                       </span>
-                    ) : row.sscResultUrl && !readOnly ? (
-                      <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-                        <button 
-                          onClick={() => processSSC(row.id, row.sscResultUrl)}
-                          disabled={loadingRows[row.id]}
-                          className="extract-btn"
-                          title="Extract directly from Google Drive"
-                        >
-                          {loadingRows[row.id] ? <Loader2 size={14} className="spin" /> : <Wand2 size={14} />}
-                          Extract
-                        </button>
-                        <label 
-                          className="extract-btn" 
-                          style={{ cursor: 'pointer', background: 'var(--surface)', border: '1px solid var(--border)' }} 
-                          title="Google Drive blocked it? Upload the marksheet manually to extract!"
-                        >
-                          {loadingRows[row.id] ? <Loader2 size={14} className="spin" /> : <Upload size={14} />}
-                          <input 
-                            type="file" 
-                            accept="image/*,.pdf" 
-                            style={{ display: 'none' }} 
-                            onChange={(e) => {
-                              if (e.target.files && e.target.files[0]) {
-                                processLocalSSC(row.id, e.target.files[0]);
-                              }
-                            }} 
-                          />
-                        </label>
-                      </div>
                     ) : (
-                      <span className="text-secondary">-</span>
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        <span 
+                          className="font-medium" 
+                          style={{ 
+                            color: sscData[row.id] === 'Error' ? 'var(--error)' : 'var(--accent)', 
+                            cursor: 'pointer', 
+                            borderBottom: '1px dashed var(--accent)',
+                            minWidth: '24px'
+                          }}
+                          onClick={() => startEditing(row.id, sscData[row.id] || '')}
+                          title="Click to edit percentage manually"
+                        >
+                          {sscData[row.id] || '-'}
+                        </span>
+                        
+                        <div style={{ display: 'flex', gap: '4px' }}>
+                          {row.sscResultUrl && (
+                            <button 
+                              onClick={() => processSSC(row.id, row.sscResultUrl)}
+                              disabled={loadingRows[row.id]}
+                              className="extract-btn"
+                              title="Extract directly from Google Drive"
+                            >
+                              {loadingRows[row.id] ? <Loader2 size={14} className="spin" /> : <Wand2 size={14} />}
+                            </button>
+                          )}
+                          
+                          <label 
+                            className="extract-btn" 
+                            style={{ cursor: 'pointer', background: 'var(--surface)', border: '1px solid var(--border)' }} 
+                            title="Upload local marksheet image to extract AI percentage"
+                          >
+                            {loadingRows[row.id] ? <Loader2 size={14} className="spin" /> : <Upload size={14} />}
+                            <input 
+                              type="file" 
+                              accept="image/*,.pdf" 
+                              style={{ display: 'none' }} 
+                              onChange={(e) => {
+                                if (e.target.files && e.target.files[0]) {
+                                  processLocalSSC(row.id, e.target.files[0]);
+                                }
+                              }} 
+                            />
+                          </label>
+                        </div>
+                      </div>
                     )}
                   </td>
                   <td>

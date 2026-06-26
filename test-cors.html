@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html><body>
+<script>
+async function test() {
+  try {
+    const proxyUrl = "https://script.google.com/macros/s/AKfycbxnfkaYqQREEvhxtIEIxCVZ26todhTqMgQGwT_tYHPtNm8PXwaSkBfblAt9akZtcsPG/exec?id=17823724264738341056235640507058";
+    const res = await fetch(proxyUrl);
+    const data = await res.json();
+    document.body.innerHTML = "Success: " + !!data.base64;
+  } catch (e) {
+    document.body.innerHTML = "Error: " + e.message;
+  }
+}
+test();
+</script>
+</body></html>
