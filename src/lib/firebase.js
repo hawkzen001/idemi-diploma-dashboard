@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getFirestore, collection, doc, getDoc, setDoc } from "firebase/firestore";
+import { getFirestore, collection, doc, getDoc, setDoc, updateDoc, FieldPath } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCKxESv2p80tpRQrltrgJCxkLAEJEUn738",
@@ -33,7 +33,18 @@ export const getOverrideData = async (type) => {
 export const saveOverrideData = async (type, id, value) => {
   try {
     const docRef = doc(db, 'overrides', type);
-    await setDoc(docRef, { [id]: value }, { merge: true });
+    try {
+      await updateDoc(docRef, new FieldPath(id), value);
+    } catch (e) {
+      if (e.code === 'not-found') {
+        // Document doesn't exist yet, create it empty first
+        await setDoc(docRef, {});
+        // Then update with the literal FieldPath key to safely handle slashes in the ID
+        await updateDoc(docRef, new FieldPath(id), value);
+      } else {
+        throw e;
+      }
+    }
     return true;
   } catch (error) {
     console.error(`Error saving ${type} data to Firestore:`, error);
