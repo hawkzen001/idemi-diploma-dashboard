@@ -423,16 +423,6 @@ const DataTable = ({ data, readOnly = false }) => {
       <div className="table-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <h3 style={{ opacity: 0.1 }}>Recent Applications</h3>
-          {!readOnly && (
-            <button 
-              onClick={processAll} 
-              disabled={isProcessingAll}
-              className="process-all-btn"
-            >
-              {isProcessingAll ? <Loader2 size={16} className="spin" /> : <Wand2 size={16} />}
-              {isProcessingAll ? "Processing..." : "Process All %"}
-            </button>
-          )}
           <button 
             onClick={exportToCSV}
             className="process-all-btn"
@@ -678,37 +668,6 @@ const DataTable = ({ data, readOnly = false }) => {
                         >
                           {sscData[row.id] || '-'}
                         </span>
-                        
-                        <div style={{ display: 'flex', gap: '4px' }}>
-                          {row.sscResultUrl && (
-                            <button 
-                              onClick={() => processSSC(row.id, row.sscResultUrl)}
-                              disabled={loadingRows[row.id]}
-                              className="extract-btn"
-                              title="Extract directly from Google Drive"
-                            >
-                              {loadingRows[row.id] ? <Loader2 size={14} className="spin" /> : <Wand2 size={14} />}
-                            </button>
-                          )}
-                          
-                          <label 
-                            className="extract-btn" 
-                            style={{ cursor: 'pointer', background: 'var(--surface)', border: '1px solid var(--border)' }} 
-                            title="Upload local marksheet image to extract AI percentage"
-                          >
-                            {loadingRows[row.id] ? <Loader2 size={14} className="spin" /> : <Upload size={14} />}
-                            <input 
-                              type="file" 
-                              accept="image/*,.pdf" 
-                              style={{ display: 'none' }} 
-                              onChange={(e) => {
-                                if (e.target.files && e.target.files[0]) {
-                                  processLocalSSC(row.id, e.target.files[0]);
-                                }
-                              }} 
-                            />
-                          </label>
-                        </div>
                       </div>
                     )}
                   </td>
